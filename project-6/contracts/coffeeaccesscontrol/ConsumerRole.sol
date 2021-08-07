@@ -37,7 +37,7 @@ contract ConsumerRole {
     // Define a function 'renounceConsumer' to renounce this role
     // WO: what does this mean / what is it for? can I provide the address to remove??
     function renounceConsumer() public {
-        _remove(msg.sender);
+        _removeConsumer(msg.sender);
     }
 
     // Define an internal function '_addConsumer' to add this role, called by 'addConsumer'
