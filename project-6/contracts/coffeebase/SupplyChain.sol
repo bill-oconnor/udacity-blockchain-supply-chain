@@ -29,6 +29,8 @@ contract SupplyChain is
     // that track its journey through the supply chain -- to be sent from DApp.
     mapping(uint256 => string[]) itemsHistory;
 
+    mapping(address => bool) testRegister;
+
     // Define enum 'State' with the following values:
     enum State {
         Harvested, // 0
@@ -181,6 +183,11 @@ contract SupplyChain is
         _;
     }
 
+    modifier farmersOnly() {
+        require(farmers.has(msg.sender) == true, "Gotta be a farmer, bruh");
+        _;
+    }
+
     // In the constructor set 'owner' to the address that instantiated the contract
     // and set 'sku' to 1
     // and set 'upc' to 1
@@ -188,6 +195,21 @@ contract SupplyChain is
         owner = msg.sender;
         sku = 1;
         upc = 1;
+    }
+
+    function registerUser(address addr) public {
+        if (!testRegister[addr]) {
+            testRegister[addr] = true;
+        }
+    }
+
+    function isRegistered(address addr) public view returns (bool) {
+        return testRegister[addr];
+    }
+
+    modifier userOnly() {
+        require(isRegistered(msg.sender) == true, "Gotta be registered");
+        _;
     }
 
     // Define a function 'kill' if required
@@ -206,7 +228,7 @@ contract SupplyChain is
         string memory _originFarmLatitude,
         string memory _originFarmLongitude,
         string memory _productNotes
-    ) public onlyFarmer {
+    ) public usingFarmerRoleData {
         // Add the new item as part of Harvest
         // WO: memory??
         Item memory item = Item(

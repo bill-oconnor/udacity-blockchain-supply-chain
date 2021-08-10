@@ -6,48 +6,42 @@ var DistributorRole = artifacts.require('DistributorRole');
 var FarmerRole = artifacts.require('FarmerRole');
 var RetailerRole = artifacts.require('RetailerRole');
 
-async function addConsumer(consumerAddress, ownerAddress) {
-    const consumerRole = await ConsumerRole.deployed()
-    const consumerSet = await consumerRole.isConsumer.call(consumerAddress, { from: ownerAddress });
-    !consumerSet && await consumerRole.addConsumer(consumerAddress, { from: ownerAddress });
-    const success = await consumerRole.isConsumer.call(consumerAddress, { from: ownerAddress });
+async function addConsumer(consumerAddress, ownerAddress, contract) {
+    const consumerSet = await contract.isConsumer.call(consumerAddress, { from: ownerAddress });
+    !consumerSet && await contract.addConsumer(consumerAddress, { from: ownerAddress });
+    const success = await contract.isConsumer.call(consumerAddress, { from: ownerAddress });
     return success;
 }
 
-async function addDistributor(distributorAddress, ownerAddress) {
-    const distributorRole = await DistributorRole.deployed();
-    const distributorSet = await distributorRole.isDistributor.call(distributorAddress, { from: ownerAddress });
-    !distributorSet && await distributorRole.addDistributor(distributorAddress, { from: ownerAddress });
-    const success = await distributorRole.isDistributor.call(distributorAddress, { from: ownerAddress });
+async function addDistributor(distributorAddress, ownerAddress, contract) {
+    const distributorSet = await contract.isDistributor.call(distributorAddress, { from: ownerAddress });
+    !distributorSet && await contract.addDistributor(distributorAddress, { from: ownerAddress });
+    const success = await contract.isDistributor.call(distributorAddress, { from: ownerAddress });
     return success;
 }
 
-async function addFarmer(farmerAddress, ownerAddress) {
-    const farmerRole = await FarmerRole.deployed();
-    const farmerSet = await farmerRole.isFarmer.call(farmerAddress, { from: ownerAddress });
-    !farmerSet && await farmerRole.addFarmer(farmerAddress, { from: ownerAddress });
-    const success = await farmerRole.isFarmer.call(farmerAddress, { from: ownerAddress });
+async function addFarmer(farmerAddress, ownerAddress, contract) {
+    const farmerSet = await contract.isFarmer.call(farmerAddress, { from: ownerAddress });
+    !farmerSet && await contract.addFarmer(farmerAddress, { from: ownerAddress });
+    const success = await contract.isFarmer.call(farmerAddress, { from: ownerAddress });
     console.log({farmerSet, success})
     return success;
 }
 
-async function getFarmersCount() {
-    const farmerRole = await FarmerRole.deployed();
-    const count = await farmerRole.membershipCount.call();
+async function getFarmersCount(contract) {
+    const count = await contract.membershipCount.call();
     return count;
 }
 
-async function isFarmer(address) {
-    const farmerRole = await FarmerRole.deployed();
-    const isFarmer = await farmerRole.isFarmer.call(address);
+async function isFarmer(address, contract) {
+    const isFarmer = await contract.isFarmer.call(address);
     return isFarmer;
 }
 
-async function addRetailer(retailerAddress, ownerAddress) {
-    const retailerRole = await RetailerRole.deployed()
-    const retailerSet = await retailerRole.isRetailer.call(retailerAddress, { from: ownerAddress });
-    !retailerSet && await retailerRole.addRetailer(retailerAddress, { from: ownerAddress });
-    const success = await retailerRole.isRetailer.call(retailerAddress, { from: ownerAddress });
+async function addRetailer(retailerAddress, ownerAddress, contract) {
+    const retailerSet = await contract.isRetailer.call(retailerAddress, { from: ownerAddress });
+    !retailerSet && await contract.addRetailer(retailerAddress, { from: ownerAddress });
+    const success = await contract.isRetailer.call(retailerAddress, { from: ownerAddress });
     return success;
 }
 
@@ -96,9 +90,15 @@ contract('SupplyChain', async function(accounts) {
     // 1st Test
     it("Testing smart contract function harvestItem() that allows a farmer to harvest coffee", async() => {
         const supplyChain = await SupplyChain.deployed();
-        const farmerAdded = await addFarmer(originFarmerID, ownerID);
-        const farmersCount = await getFarmersCount();
-        const farmerSaved = await isFarmer(originFarmerID);
+        const farmerOwnerAdded = await addFarmer(ownerID, ownerID, supplyChain);
+        const farmerAdded = await addFarmer(originFarmerID, ownerID, supplyChain);
+        const farmersCount = await getFarmersCount(supplyChain);
+        const farmerSaved = await isFarmer(originFarmerID, supplyChain);
+
+        await supplyChain.registerUser(originFarmerID);
+        // const userRegistered = await supplyChain.isRegistered.call(originFarmerID);
+
+        // const senderRegistered = await supplyChain.senderIsRegistered.call({ from: originFarmerID });
 
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -113,12 +113,15 @@ contract('SupplyChain', async function(accounts) {
 
         console.log({
             farmerAdded,
+            farmerOwnerAdded,
             farmersCount,
-            farmerSaved
+            farmerSaved,
+            // senderRegistered
         });
         assert.equal(farmerAdded, true);
-        assert.equal(farmersCount, 2);
         assert.equal(farmerSaved, true);
+        assert.equal(farmersCount, 2);
+        // assert.equal(senderRegistered, originFarmerID);
 
         // Mark an item as Harvested by calling function harvestItem()
         await supplyChain.harvestItem(upc, originFarmerID, originFarmName, originFarmInformation, originFarmLatitude, originFarmLongitude, productNotes, { from: originFarmerID });
@@ -143,7 +146,7 @@ contract('SupplyChain', async function(accounts) {
     // 2nd Test
     it("Testing smart contract function processItem() that allows a farmer to process coffee", async() => {
         const supplyChain = await SupplyChain.deployed();
-        const farmerAdded = await addFarmer(originFarmerID, ownerID);
+        const farmerAdded = await addFarmer(originFarmerID, ownerID, supplyChain);
         
         assert.equal(farmerAdded, true, "Farmer was never added as a farmer");
         
@@ -174,7 +177,7 @@ contract('SupplyChain', async function(accounts) {
     // 3rd Test
     it("Testing smart contract function packItem() that allows a farmer to pack coffee", async() => {
         const supplyChain = await SupplyChain.deployed();
-        await addFarmer(originFarmerID, ownerID);
+        await addFarmer(originFarmerID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -203,7 +206,7 @@ contract('SupplyChain', async function(accounts) {
     // 4th Test
     it("Testing smart contract function sellItem() that allows a farmer to sell coffee", async() => {
         const supplyChain = await SupplyChain.deployed();
-        await addFarmer(originFarmerID, ownerID);
+        await addFarmer(originFarmerID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -233,7 +236,7 @@ contract('SupplyChain', async function(accounts) {
     // 5th Test
     it("Testing smart contract function buyItem() that allows a distributor to buy coffee", async() => {
         const supplyChain = await SupplyChain.deployed();
-        await addDistributor(distributorID, ownerID);
+        await addDistributor(distributorID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -263,7 +266,7 @@ contract('SupplyChain', async function(accounts) {
     // 6th Test
     it("Testing smart contract function shipItem() that allows a distributor to ship coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
-        await addDistributor(distributorID, ownerID);
+        await addDistributor(distributorID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -292,7 +295,7 @@ contract('SupplyChain', async function(accounts) {
     // 7th Test
     it("Testing smart contract function receiveItem() that allows a retailer to mark coffee received", async() => {
         const supplyChain = await SupplyChain.deployed()
-        await addRetailer(retailerID, ownerID);
+        await addRetailer(retailerID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false
@@ -322,7 +325,7 @@ contract('SupplyChain', async function(accounts) {
     // 8th Test
     it("Testing smart contract function purchaseItem() that allows a consumer to purchase coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
-        await addConsumer(consumerID, ownerID);
+        await addConsumer(consumerID, ownerID, supplyChain);
         
         // Declare and Initialize a variable for event
         var eventEmitted = false

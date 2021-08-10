@@ -12,7 +12,7 @@ contract FarmerRole {
     event FarmerRemoved(address indexed account);
 
     // Define a struct 'farmers' by inheriting from 'Roles' library, struct Role
-    Roles.Role private farmers;
+    Roles.Role internal farmers;
     uint256 public membershipCount = 0;
 
     // In the constructor make the address that deploys this contract the 1st farmer
@@ -22,7 +22,12 @@ contract FarmerRole {
 
     // Define a modifier that checks to see if msg.sender has the appropriate role
     modifier onlyFarmer() {
-        // require(isFarmer(msg.sender), "msg.sender is not a farmer");
+        require(isFarmer(msg.sender) == true, "msg.sender is not a farmer");
+        _;
+    }
+
+    modifier usingFarmerRoleData() {
+        require(membershipCount > 1, "Hmmm, membershipCount <= 1");
         _;
     }
 
