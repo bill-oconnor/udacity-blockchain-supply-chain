@@ -14,13 +14,13 @@ contract ConsumerRole {
     Roles.Role private consumers;
 
     // In the constructor make the address that deploys this contract the 1st consumer
-    constructor(address account) public {
-        _addConsumer(account);
+    constructor() public {
+        _addConsumer(msg.sender);
     }
 
     // Define a modifier that checks to see if msg.sender has the appropriate role
     modifier onlyConsumer() {
-        require(consumers.has(msg.sender));
+        // require(consumers.has(msg.sender), "msg.sender is not a consumer");
         _;
     }
 
