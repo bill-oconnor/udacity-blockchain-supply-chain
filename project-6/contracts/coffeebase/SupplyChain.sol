@@ -101,9 +101,12 @@ contract SupplyChain is
         _;
         uint256 _price = items[_upc].productPrice;
         uint256 amountToReturn = msg.value - _price;
-        address consumer = items[_upc].consumerID;
-        require(consumer != address(0));
-        consumer.transfer(amountToReturn);
+        address payer = msg.sender;
+        require(
+            payer != address(0),
+            "No one to return funds to - address empty"
+        );
+        payer.transfer(amountToReturn);
     }
 
     // Define a modifier that checks if an item.state of a upc is Harvested
@@ -287,12 +290,13 @@ contract SupplyChain is
     // Call modifer to check if buyer has paid enough
 
     // Call modifer to send any excess ether back to buyer
-    // checkValue(_upc)
+    //
     function buyItem(uint256 _upc)
         public
         payable
         forSale(_upc)
         paidEnough(items[_upc].productPrice)
+        checkValue(_upc)
         onlyDistributor
     {
         // Update the appropriate fields - ownerID, distributorID, itemState
