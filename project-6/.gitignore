@@ -1,2 +1,5 @@
 build/
 node_modules/
+infura-id.txt
+mnemonic.txt
+deployment_stats.txt

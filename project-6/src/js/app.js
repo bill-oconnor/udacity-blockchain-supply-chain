@@ -58,7 +58,9 @@ App = {
     initWeb3: async function () {
         /// Find or Inject Web3 Provider
         /// Modern dapp browsers...
+        console.log("Connecting via...");
         if (window.ethereum) {
+            console.log("window.ethereum");
             App.web3Provider = window.ethereum;
             try {
                 // Request account access
@@ -70,10 +72,12 @@ App = {
         }
         // Legacy dapp browsers...
         else if (window.web3) {
+            console.log("window.web3");
             App.web3Provider = window.web3.currentProvider;
         }
         // If no injected web3 instance is detected, fall back to Ganache
         else {
+            console.log("ganache");
             App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
         }
 
@@ -103,15 +107,19 @@ App = {
         
         /// JSONfy the smart contracts
         $.getJSON(jsonSupplyChain, function(data) {
+            const rinkebyDeploymentAddress = "0xe381e6b87a719b64cbe257AAcb06ced1F7C90638";
+            const localDeploymentAddress = "0x9b862a26E6C0Af140a0D6990B09cfc639f5063C0"
+
             console.log('data',data);
+            const contractAddress = localDeploymentAddress;
             var SupplyChainArtifact = data;
-            App.contracts.SupplyChain = TruffleContract(SupplyChainArtifact);
+            App.contracts.SupplyChain = new web3.eth.Contract(SupplyChainArtifact.abi, contractAddress);
             App.contracts.SupplyChain.setProvider(App.web3Provider);
             
             App.fetchItemBufferOne();
             App.fetchItemBufferTwo();
             App.fetchEvents();
-
+            App.registerUsers();
         });
 
         return App.bindEvents();
@@ -160,15 +168,28 @@ App = {
             case 10:
                 return await App.fetchItemBufferTwo(event);
                 break;
+            case 11:
+                return App.registerFarmer();
+                break;
+            case 12:
+                return App.registerDistributor();
+                break;
+            case 13:
+                return App.registerRetailer();
+                break;
+            case 14:
+                return App.registerConsumer();
+                break;
             }
+            
+                
     },
 
     harvestItem: function(event) {
         event.preventDefault();
         var processId = parseInt($(event.target).data('id'));
 
-        App.contracts.SupplyChain.deployed().then(function(instance) {
-            return instance.harvestItem(
+        App.contracts.SupplyChain.methods.harvestItem(
                 App.upc, 
                 App.metamaskAccountID, 
                 App.originFarmName, 
@@ -176,8 +197,8 @@ App = {
                 App.originFarmLatitude, 
                 App.originFarmLongitude, 
                 App.productNotes
-            );
-        }).then(function(result) {
+            ).send({ from: App.originFarmerID })
+        .then(function(result) {
             $("#ftc-item").text(result);
             console.log('harvestItem',result);
         }).catch(function(err) {
@@ -292,9 +313,7 @@ App = {
         App.upc = $('#upc').val();
         console.log('upc',App.upc);
 
-        App.contracts.SupplyChain.deployed().then(function(instance) {
-          return instance.fetchItemBufferOne(App.upc);
-        }).then(function(result) {
+        App.contracts.SupplyChain.methods.fetchItemBufferOne(App.upc).call({ from: App.ownerID }).then(function(result) {
           $("#ftc-item").text(result);
           console.log('fetchItemBufferOne', result);
         }).catch(function(err) {
@@ -306,9 +325,7 @@ App = {
     ///    event.preventDefault();
     ///    var processId = parseInt($(event.target).data('id'));
                         
-        App.contracts.SupplyChain.deployed().then(function(instance) {
-          return instance.fetchItemBufferTwo.call(App.upc);
-        }).then(function(result) {
+        App.contracts.SupplyChain.methods.fetchItemBufferTwo(App.upc).call({ from: App.ownerID }).then(function(result) {
           $("#ftc-item").text(result);
           console.log('fetchItemBufferTwo', result);
         }).catch(function(err) {
@@ -326,15 +343,54 @@ App = {
             };
         }
 
-        App.contracts.SupplyChain.deployed().then(function(instance) {
-        var events = instance.allEvents(function(err, log){
+        App.contracts.SupplyChain.events.allEvents(function(err, log){
           if (!err)
             $("#ftc-events").append('<li>' + log.event + ' - ' + log.transactionHash + '</li>');
         });
-        }).catch(function(err) {
-          console.log(err.message);
-        });
         
+    },
+
+    registerUsers: async function registerUsers() {
+        // try {
+        //     await App.contracts.SupplyChain.methods.addFarmer(App.originFarmerID).send({ from: App.ownerID });
+        //     await App.contracts.SupplyChain.methods.addDistributor(App.distributorID).send({ from: App.ownerID });
+        //     await App.contracts.SupplyChain.methods.addRetailer(App.retailerID).send({ from: App.ownerID });
+        //     await App.contracts.SupplyChain.methods.addConsumer(App.consumerID).send({ from: App.ownerID });
+        // } catch(e) {
+        //     console.error(e);
+        // }
+    },
+
+    registerDistributor: async function registerDistributor() {
+        try {
+            await App.contracts.SupplyChain.methods.addDistributor(App.distributorID).send({ from: App.ownerID });
+        } catch (e) {
+            console.error("Error registering distributor",e);
+        }
+    },
+
+    registerFarmer: async function registerFarmer() {
+        try {
+            await App.contracts.SupplyChain.methods.addFarmer(App.originFarmerID).send({ from: App.ownerID });
+        } catch (e) {
+            console.error("Error registering Farmer",e);
+        }
+    },
+
+    registerConsumer: async function registerConsumer() {
+        try {
+            await App.contracts.SupplyChain.methods.addConsumer(App.consumerID).send({ from: App.ownerID });
+        } catch (e) {
+            console.error("Error registering consumer",e);
+        }
+    },
+
+    registerRetailer: async function registerRetailer() {
+        try {
+            await App.contracts.SupplyChain.methods.addRetailer(App.retailerID).send({ from: App.ownerID });
+        } catch (e) {
+            console.error("Error registering retailer",e);
+        }
     }
 };
 

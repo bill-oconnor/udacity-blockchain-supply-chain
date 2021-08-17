@@ -25,7 +25,9 @@ var contract = (function(module) {
     return this.provider.sendAsync.apply(this.provider, arguments);
   };
 
-  var BigNumber = (new Web3()).toBigNumber(0).constructor;
+  console.log(Web3);
+  var w3 = new Web3();
+  var BigNumber = (w3).utils.toBN(0).constructor;
 
   var Utils = {
     is_object: function(val) {
@@ -255,8 +257,8 @@ var contract = (function(module) {
 
     if (typeof contract == "string") {
       var address = contract;
-      var contract_class = constructor.web3.eth.contract(this.abi);
-      contract = contract_class.at(address);
+      var contract_class = new constructor.web3.eth.Contract(this.abi);
+      contract = { ...contract_class.methods, ...contract_class.events }
     }
 
     this.contract = contract;
@@ -266,15 +268,15 @@ var contract = (function(module) {
       var item = this.abi[i];
       if (item.type == "function") {
         if (item.constant == true) {
-          this[item.name] = Utils.promisifyFunction(contract[item.name], constructor);
+          this[item.name] = contract[item.name];
         } else {
           this[item.name] = Utils.synchronizeFunction(contract[item.name], this, constructor);
         }
 
-        this[item.name].call = Utils.promisifyFunction(contract[item.name].call, constructor);
-        this[item.name].sendTransaction = Utils.promisifyFunction(contract[item.name].sendTransaction, constructor);
+        this[item.name].call = contract[item.name].call;
+        this[item.name].sendTransaction = contract[item.name].sendTransaction;
         this[item.name].request = contract[item.name].request;
-        this[item.name].estimateGas = Utils.promisifyFunction(contract[item.name].estimateGas, constructor);
+        this[item.name].estimateGas = contract[item.name].estimateGas;
       }
 
       if (item.type == "event") {
@@ -483,7 +485,7 @@ var contract = (function(module) {
           }
         }
 
-        self.web3.version.getNetwork(function(err, result) {
+        self.web3.eth.net.getId(function(err, result) {
           if (err) return reject(err);
 
           var network_id = result.toString();
