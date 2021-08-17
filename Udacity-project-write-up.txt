@@ -1,0 +1,10 @@
+Supply Chain project write-up
+
+SupplyChain.sol Rinkeby address: 0xe381e6b87a719b64cbe257AAcb06ced1F7C90638
+Program versions:
+  Node.js: v10.18.0
+  Truffle: v5.0.2
+  Solidity: 0.4.24
+  Web3: 1.3.0
+
+UML: exhausted free tier on Lucid Charts. Couldn't finish state diagram or do Class diagram
