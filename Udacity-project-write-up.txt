@@ -1,6 +1,7 @@
 Supply Chain project write-up
 
 SupplyChain.sol Rinkeby address: 0xe381e6b87a719b64cbe257AAcb06ced1F7C90638
+SupplyChain.sol deployment transaction hash: 0xbf4fcff1ca277104a07c9a7a0394124be473709da02cacb6a018e5ccffa76b01
 Program versions:
   Node.js: v10.18.0
   Truffle: v5.0.2
@@ -8,3 +9,6 @@ Program versions:
   Web3: 1.3.0
 
 UML: exhausted free tier on Lucid Charts. Couldn't finish state diagram or do Class diagram
+
+Why I used Web3: I used Web3 to connect my app to my MetaMask extension in the browser. MetaMask provides an effective gateway to the various Ethereum networks,
+and is one of the most popular ways to access the networks from within apps, so choosing Web3 is a no-brainer for both the developer and the user experience
