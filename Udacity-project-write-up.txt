@@ -8,7 +8,5 @@ Program versions:
   Solidity: 0.4.24
   Web3: 1.3.0
 
-UML: exhausted free tier on Lucid Charts. Couldn't finish state diagram or do Class diagram
-
 Why I used Web3: I used Web3 to connect my app to my MetaMask extension in the browser. MetaMask provides an effective gateway to the various Ethereum networks,
 and is one of the most popular ways to access the networks from within apps, so choosing Web3 is a no-brainer for both the developer and the user experience
